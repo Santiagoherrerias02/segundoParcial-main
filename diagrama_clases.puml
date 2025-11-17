@@ -1,0 +1,179 @@
+@startuml Diagrama de Clases - Sistema de Comercio Electrónico
+
+' Configuración de estilos
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<Singleton>> LightYellow
+    BackgroundColor<<Factory>> LightBlue
+    BackgroundColor<<Observer>> LightGreen
+    BackgroundColor<<Strategy>> LightCoral
+    BorderColor Black
+    ArrowColor Black
+}
+
+' ====================================
+' PATRÓN SINGLETON
+' ====================================
+class DatabaseConnection <<Singleton>> {
+    - {static} instance : DatabaseConnection
+    - connectionString : String
+    - DatabaseConnection()
+    + {static} getInstance() : DatabaseConnection
+    + query(sql : String) : void
+}
+
+note right of DatabaseConnection
+  <b>Patrón Singleton</b>
+  Garantiza una única instancia
+  de conexión a la base de datos
+end note
+
+' ====================================
+' PATRÓN FACTORY
+' ====================================
+abstract class Producto {
+    # nombre : String
+    # precio : double
+    + Producto(nombre : String, precio : double)
+    + {abstract} mostrarInfo() : void
+    + getNombre() : String
+    + getPrecio() : double
+}
+
+class Libro {
+    - autor : String
+    + Libro(nombre : String, precio : double, autor : String)
+    + mostrarInfo() : void
+}
+
+class Electronico {
+    - garantiaMeses : int
+    + Electronico(nombre : String, precio : double, garantiaMeses : int)
+    + mostrarInfo() : void
+}
+
+class ProductoFactory <<Factory>> {
+    + {static} crearProducto(tipo : String, nombre : String, precio : double) : Producto
+    + {static} crearLibro(nombre : String, precio : double, autor : String) : Libro
+    + {static} crearElectronico(nombre : String, precio : double, garantia : int) : Electronico
+}
+
+Producto <|-- Libro
+Producto <|-- Electronico
+ProductoFactory ..> Producto : <<creates>>
+ProductoFactory ..> Libro : <<creates>>
+ProductoFactory ..> Electronico : <<creates>>
+
+note right of ProductoFactory
+  <b>Patrón Factory</b>
+  Encapsula la creación de
+  diferentes tipos de productos
+end note
+
+' ====================================
+' PATRÓN OBSERVER
+' ====================================
+interface Observer <<Observer>> {
+    + actualizar(mensaje : String) : void
+}
+
+class Cliente {
+    - nombre : String
+    + Cliente(nombre : String)
+    + actualizar(mensaje : String) : void
+    + getNombre() : String
+}
+
+class Tienda <<Observer>> {
+    - clientes : List<Observer>
+    - nombre : String
+    + Tienda(nombre : String)
+    + suscribir(cliente : Observer) : void
+    + desuscribir(cliente : Observer) : void
+    + notificarClientes(mensaje : String) : void
+    + nuevaOferta(descripcion : String) : void
+}
+
+Observer <|.. Cliente
+Tienda o--> "0..*" Observer : observa
+Cliente -[hidden]- Tienda
+
+note right of Tienda
+  <b>Patrón Observer</b>
+  Subject que notifica a
+  múltiples observadores
+end note
+
+' ====================================
+' PATRÓN STRATEGY
+' ====================================
+interface EstrategiaPago <<Strategy>> {
+    + pagar(monto : double) : void
+}
+
+class PagoTarjeta {
+    - numeroTarjeta : String
+    + PagoTarjeta(numeroTarjeta : String)
+    + pagar(monto : double) : void
+}
+
+class PagoEfectivo {
+    + pagar(monto : double) : void
+}
+
+class PagoPayPal {
+    - email : String
+    + PagoPayPal(email : String)
+    + pagar(monto : double) : void
+}
+
+class CarritoCompra <<Strategy>> {
+    - productos : List<Producto>
+    - estrategiaPago : EstrategiaPago
+    + CarritoCompra()
+    + agregarProducto(producto : Producto) : void
+    + setEstrategiaPago(estrategia : EstrategiaPago) : void
+    + calcularTotal() : double
+    + checkout() : void
+}
+
+EstrategiaPago <|.. PagoTarjeta
+EstrategiaPago <|.. PagoEfectivo
+EstrategiaPago <|.. PagoPayPal
+CarritoCompra o--> "1" EstrategiaPago : usa
+CarritoCompra o--> "0..*" Producto : contiene
+
+note right of CarritoCompra
+  <b>Patrón Strategy</b>
+  Context que utiliza diferentes
+  estrategias de pago intercambiables
+end note
+
+' ====================================
+' CLASE PRINCIPAL
+' ====================================
+class Main {
+    + {static} main(args : String[]) : void
+}
+
+Main ..> DatabaseConnection : usa
+Main ..> ProductoFactory : usa
+Main ..> Tienda : usa
+Main ..> Cliente : usa
+Main ..> CarritoCompra : usa
+Main ..> PagoTarjeta : usa
+Main ..> PagoEfectivo : usa
+Main ..> PagoPayPal : usa
+
+' ====================================
+' LEYENDA
+' ====================================
+legend bottom
+  <b>Patrones de Diseño Implementados:</b>
+  <color:LightYellow>█</color> Singleton - DatabaseConnection
+  <color:LightBlue>█</color> Factory - ProductoFactory
+  <color:LightGreen>█</color> Observer - Tienda/Cliente
+  <color:LightCoral>█</color> Strategy - CarritoCompra/EstrategiaPago
+end legend
+
+@enduml
